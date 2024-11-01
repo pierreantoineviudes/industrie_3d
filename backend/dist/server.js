@@ -41,12 +41,15 @@ const getDataService_1 = require("./getDataService");
 const dotenv_1 = __importDefault(require("dotenv"));
 const path = __importStar(require("path"));
 const proj4_1 = __importDefault(require("proj4"));
+const cors_1 = __importDefault(require("cors"));
 // load env variables
 dotenv_1.default.config({ path: path.resolve(__dirname, "../.env") });
 // define projection lambert
 proj4_1.default.defs('EPSG:9794', '+proj=lcc +lat_0=46.5 +lon_0=3 +lat_1=49 +lat_2=44 +x_0=700000 +y_0=6600000 +ellps=GRS80 +units=m +no_defs +type=crs');
 // Create an Express application
 const app = (0, express_1.default)();
+// Use CORS middleware
+app.use((0, cors_1.default)());
 // Set the port number for the server
 const port = 3000;
 // create service to get data
@@ -69,10 +72,6 @@ app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
     });
     coords.filter((val) => val !== null);
-    // TODO : convertir les donnees en numérique
-    // TODO : convertir les données en WSG 84
-    // TODO : dégager les coordonnées NULL
-    console.log(coords);
     const mappedValues = coords.map((value) => {
         const x = parseFloat(value[0]);
         const y = parseFloat(value[1]);

@@ -45,7 +45,7 @@ class GetDataService {
         // Example: Replace with actual API endpoint
         this.base_url = "https://api.insee.fr/api-sirene/3.11/siret/";
         this.champs = "siret,activitePrincipaleUniteLegale,trancheEffectifsUniteLegale,codeCommuneEtablissement,coordonneeLambertAbscisseEtablissement,coordonneeLambertOrdonneeEtablissement";
-        this.departement = "62";
+        this.departement = "13";
         this.token = process.env.SIRENE_API_KEY;
         this.headers = {
             "X-INSEE-Api-Key-Integration": this.token,
@@ -91,8 +91,6 @@ class GetDataService {
             // read JSON data
             const csvNafs = [];
             const filePath = path.resolve(__dirname, 'data/interesting_naf_codes.csv');
-            console.log(__dirname);
-            console.log(`filePath : ${filePath}`);
             return new Promise((resolve, reject) => {
                 fs.createReadStream(filePath, 'utf-8')
                     .pipe(csv({ separator: "|" }))

@@ -2,14 +2,15 @@ import * as fs from 'fs';
 import csv = require('csv-parser');
 import * as path from 'path';
 import axios, { AxiosResponse } from 'axios';
-import { parseArgs } from 'util';
+
+// TODO : ajouter un système de cache pour ne pas appeler plusieurs fois les données de l'API
 
 export class GetDataService {
 
     // Example: Replace with actual API endpoint
     private base_url = "https://api.insee.fr/api-sirene/3.11/siret/";
     private champs = "siret,activitePrincipaleUniteLegale,trancheEffectifsUniteLegale,codeCommuneEtablissement,coordonneeLambertAbscisseEtablissement,coordonneeLambertOrdonneeEtablissement";
-    private departement = "75";
+    private departement = "13";
     private token = process.env.SIRENE_API_KEY;
     private headers = {
         "X-INSEE-Api-Key-Integration": this.token,
