@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import csv = require('csv-parser');
 import * as path from 'path';
 import axios, { AxiosResponse } from 'axios';
+import { parseArgs } from 'util';
 
 export class GetDataService {
 
@@ -22,7 +23,7 @@ export class GetDataService {
         const promises: Promise<AxiosResponse<any, any>>[] = [];
         const tailleSlice = 20;
         // boucle sur les slices
-        for (let i = 0; i < nafCodes.length; i += tailleSlice) {
+        for (let i = 0; i < Math.min(1, nafCodes.length); i += tailleSlice) {
             const nafGroupe = nafCodes.slice(i, Math.min(i + tailleSlice, nafCodes.length));
             let query = `trancheEffectifsUniteLegale:[0 TO 53] AND codeCommuneEtablissement:${this.departement}* AND (activitePrincipaleUniteLegale:${nafGroupe[0]["Code NAF"].slice(0, 2) + '.' + nafGroupe[0]["Code NAF"].slice(2)} `;
             nafGroupe.slice(1).forEach((code: any) => {
@@ -30,9 +31,15 @@ export class GetDataService {
             });
             query += ")";
 
+            const params = {
+                "q": query,
+                "champs": this.champs,
+                "nombre": "2"
+            }
+
             // fetching webservice with query
             try {
-                const promise = axios.get(this.base_url, { headers: this.headers })
+                const promise = axios.get(this.base_url, { headers: this.headers, params: params })
                 promises.push(promise);
             } catch (error: any) {
                 if (error.isAxiosError && error.response) {
