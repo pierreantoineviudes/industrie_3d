@@ -31,31 +31,59 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GetDataService = void 0;
 const fs = __importStar(require("fs"));
 const csv = require("csv-parser");
 const path = __importStar(require("path"));
+const axios_1 = __importDefault(require("axios"));
 class GetDataService {
     constructor() {
         // Example: Replace with actual API endpoint
         this.base_url = "https://api.insee.fr/api-sirene/3.11/siret/";
         this.champs = "siret,activitePrincipaleUniteLegale,trancheEffectifsUniteLegale,codeCommuneEtablissement,coordonneeLambertAbscisseEtablissement,coordonneeLambertOrdonneeEtablissement";
         this.departement = "62";
+        this.token = process.env.SIRENE_API_KEY;
+        this.headers = {
+            "X-INSEE-Api-Key-Integration": this.token,
+            "Accept-Encoding": "gzip",
+            "Accept": "application/json",
+        };
     }
     getData() {
         return __awaiter(this, void 0, void 0, function* () {
-            // readd csv
+            // read csv    
             const nafCodes = yield this.readNafCodes();
-            nafCodes.forEach((code) => {
-                const query = `activitePrincipaleUniteLegale:${code} AND trancheEffectifsUniteLegale:[0 TO 53] AND codeCommuneEtablissement:${this.departement}*`;
+            const promises = [];
+            const tailleSlice = 20;
+            // boucle sur les slices
+            for (let i = 0; i < nafCodes.length; i += tailleSlice) {
+                const nafGroupe = nafCodes.slice(i, Math.min(i + tailleSlice, nafCodes.length));
+                let query = `trancheEffectifsUniteLegale:[0 TO 53] AND codeCommuneEtablissement:${this.departement}* AND (activitePrincipaleUniteLegale:${nafGroupe[0]["Code NAF"].slice(0, 2) + '.' + nafGroupe[0]["Code NAF"].slice(2)} `;
+                nafGroupe.slice(1).forEach((code) => {
+                    query += `OR activitePrincipaleUniteLegale:${code["Code NAF"].slice(0, 2) + '.' + code["Code NAF"].slice(2)} `;
+                });
+                query += ")";
                 const params = {
                     "q": query,
                     "champs": this.champs,
                     "nombre": "1000"
                 };
-            });
-            return nafCodes;
+                // fetching webservice with query
+                try {
+                    const promise = axios_1.default.get(this.base_url, { headers: this.headers, params: params });
+                    promises.push(promise);
+                }
+                catch (error) {
+                    if (error.isAxiosError && error.response) {
+                        console.error(error.response.data);
+                    }
+                }
+            }
+            return promises;
         });
     }
     readNafCodes() {

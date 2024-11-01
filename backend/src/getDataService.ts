@@ -9,7 +9,7 @@ export class GetDataService {
     // Example: Replace with actual API endpoint
     private base_url = "https://api.insee.fr/api-sirene/3.11/siret/";
     private champs = "siret,activitePrincipaleUniteLegale,trancheEffectifsUniteLegale,codeCommuneEtablissement,coordonneeLambertAbscisseEtablissement,coordonneeLambertOrdonneeEtablissement";
-    private departement = "62";
+    private departement = "75";
     private token = process.env.SIRENE_API_KEY;
     private headers = {
         "X-INSEE-Api-Key-Integration": this.token,
@@ -23,7 +23,7 @@ export class GetDataService {
         const promises: Promise<AxiosResponse<any, any>>[] = [];
         const tailleSlice = 20;
         // boucle sur les slices
-        for (let i = 0; i < Math.min(1, nafCodes.length); i += tailleSlice) {
+        for (let i = 0; i < nafCodes.length; i += tailleSlice) {
             const nafGroupe = nafCodes.slice(i, Math.min(i + tailleSlice, nafCodes.length));
             let query = `trancheEffectifsUniteLegale:[0 TO 53] AND codeCommuneEtablissement:${this.departement}* AND (activitePrincipaleUniteLegale:${nafGroupe[0]["Code NAF"].slice(0, 2) + '.' + nafGroupe[0]["Code NAF"].slice(2)} `;
             nafGroupe.slice(1).forEach((code: any) => {
@@ -34,7 +34,7 @@ export class GetDataService {
             const params = {
                 "q": query,
                 "champs": this.champs,
-                "nombre": "2"
+                "nombre": "1000"
             }
 
             // fetching webservice with query
@@ -55,9 +55,6 @@ export class GetDataService {
         // read JSON data
         const csvNafs: string[] = [];
         const filePath = path.resolve(__dirname, 'data/interesting_naf_codes.csv');
-        console.log(__dirname);
-        console.log(`filePath : ${filePath}`);
-
 
         return new Promise((resolve, reject) => {
             fs.createReadStream(filePath, 'utf-8')

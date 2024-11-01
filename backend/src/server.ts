@@ -4,16 +4,20 @@ import { GetDataService } from './getDataService';
 import dotenv from 'dotenv';
 import * as path from 'path';
 import proj4 from 'proj4';
+import cors from 'cors';
+
 
 // load env variables
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
-console.log("env : ", process.env);
 
 // define projection lambert
 proj4.defs('EPSG:9794', '+proj=lcc +lat_0=46.5 +lon_0=3 +lat_1=49 +lat_2=44 +x_0=700000 +y_0=6600000 +ellps=GRS80 +units=m +no_defs +type=crs');
 
 // Create an Express application
 const app = express();
+
+// Use CORS middleware
+app.use(cors());
 
 // Set the port number for the server
 const port = 3000;
@@ -33,18 +37,16 @@ app.get('/', async (req, res) => {
             }) => {
                 const etablissements = data.data.etablissements;
                 etablissements.forEach((etablissement: { adresseEtablissement: any; }) => {
-                    console.log(etablissement.adresseEtablissement);
                     const x = etablissement.adresseEtablissement.coordonneeLambertAbscisseEtablissement;
                     const y = etablissement.adresseEtablissement.coordonneeLambertOrdonneeEtablissement;
-                    coords.push([x, y]);
+                    if (x !== null && y !== null && x !== '[ND]' && y !== '[ND]') {
+                        coords.push([x, y]);
+                    }
                 });
             });
         }
     )
     coords.filter((val) => val !== null);
-    // TODO : convertir les donnees en numérique
-    // TODO : convertir les données en WSG 84
-    // TODO : dégager les coordonnées NULL
     const mappedValues = coords.map((value) => {
         const x = parseFloat(value[0]);
         const y = parseFloat(value[1]);
