@@ -10,7 +10,6 @@ export class GetDataService {
     // Example: Replace with actual API endpoint
     private base_url = "https://api.insee.fr/api-sirene/3.11/siret/";
     private champs = "siret,activitePrincipaleUniteLegale,trancheEffectifsUniteLegale,codeCommuneEtablissement,coordonneeLambertAbscisseEtablissement,coordonneeLambertOrdonneeEtablissement";
-    private departement = "13";
     private token = process.env.SIRENE_API_KEY;
     private headers = {
         "X-INSEE-Api-Key-Integration": this.token,
@@ -18,7 +17,7 @@ export class GetDataService {
         "Accept": "application/json",
     }
 
-    async getData() {
+    async getData(departement: string) {
         // read csv    
         const nafCodes: any = await this.readNafCodes();
         const promises: Promise<AxiosResponse<any, any>>[] = [];
@@ -26,7 +25,7 @@ export class GetDataService {
         // boucle sur les slices
         for (let i = 0; i < nafCodes.length; i += tailleSlice) {
             const nafGroupe = nafCodes.slice(i, Math.min(i + tailleSlice, nafCodes.length));
-            let query = `trancheEffectifsUniteLegale:[0 TO 53] AND codeCommuneEtablissement:${this.departement}* AND (activitePrincipaleUniteLegale:${nafGroupe[0]["Code NAF"].slice(0, 2) + '.' + nafGroupe[0]["Code NAF"].slice(2)} `;
+            let query = `trancheEffectifsUniteLegale:[0 TO 53] AND codeCommuneEtablissement:${departement}* AND (activitePrincipaleUniteLegale:${nafGroupe[0]["Code NAF"].slice(0, 2) + '.' + nafGroupe[0]["Code NAF"].slice(2)} `;
             nafGroupe.slice(1).forEach((code: any) => {
                 query += `OR activitePrincipaleUniteLegale:${code["Code NAF"].slice(0, 2) + '.' + code["Code NAF"].slice(2)} `;
             });

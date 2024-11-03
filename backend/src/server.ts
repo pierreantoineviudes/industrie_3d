@@ -28,7 +28,7 @@ const dataService = new GetDataService;
 // Define a route for the root path ('/')
 app.get('/', async (req, res) => {
     // Send a response to the client
-    const data = await dataService.getData();
+    const data = await dataService.getData('62');
     const coords: any[] = [];
     await Promise.all(data).then(
         (datas: any) => {
