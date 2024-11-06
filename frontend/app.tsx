@@ -124,10 +124,10 @@ export default function App({
 export async function renderToDOM(container: HTMLDivElement) {
     const root = createRoot(container);
     root.render(<App />);
-    const data = (await load(DATA_URL, CSVLoader)).data;
+    // const data = (await load(DATA_URL, CSVLoader)).data;
     // const data = await fetch("http://localhost:3000/api/data").then(res => res.json())
     const data2 = (await load("http://localhost:3000", JSONLoader));
-    console.log("data : ", data);
+    // console.log("data : ", data);
     console.log("data2 : ", data2);
     const points: any[] = data2.map(d => [d.lng, d.lat]);
     root.render(<App data={points} />);

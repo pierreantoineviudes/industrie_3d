@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import * as path from 'path';
 import proj4 from 'proj4';
 import cors from 'cors';
+import * as fs from 'fs';
 
 
 // load env variables
@@ -28,35 +29,54 @@ const dataService = new GetDataService;
 // Define a route for the root path ('/')
 app.get('/', async (req, res) => {
     // Send a response to the client
-    const data = await dataService.getData('62');
-    const coords: any[] = [];
-    await Promise.all(data).then(
-        (datas: any) => {
-            datas.forEach((data: {
-                data: any; status: any;
-            }) => {
-                const etablissements = data.data.etablissements;
-                etablissements.forEach((etablissement: { adresseEtablissement: any; }) => {
-                    const x = etablissement.adresseEtablissement.coordonneeLambertAbscisseEtablissement;
-                    const y = etablissement.adresseEtablissement.coordonneeLambertOrdonneeEtablissement;
-                    if (x !== null && y !== null && x !== '[ND]' && y !== '[ND]') {
-                        coords.push([x, y]);
-                    }
+    const departement = '62'
+    // test if departement file exists in memory
+    // test if file exists locally
+    const pathDepartement: string = path.resolve(__dirname, `data/departements/${departement}.json`);
+    const departementLocalExists: boolean = fs.existsSync(pathDepartement);
+    console.log(`${departement}.json exists `, departementLocalExists);
+    if (departementLocalExists) {
+        // load departements local
+        console.log(`loading departement local : ${departement}`);
+        const mappedValues = JSON.parse(fs.readFileSync(pathDepartement, 'utf-8'));
+        console.log("mappedvalues loaded : ", mappedValues);
+        res.json(mappedValues)
+    } else {
+        const data = await dataService.getData(departement);
+        const coords: any[] = [];
+        await Promise.all(data).then(
+            (datas: any) => {
+                datas.forEach((data: {
+                    data: any; status: any;
+                }) => {
+                    const etablissements = data.data.etablissements;
+                    etablissements.forEach((etablissement: { adresseEtablissement: any; }) => {
+                        const x = etablissement.adresseEtablissement.coordonneeLambertAbscisseEtablissement;
+                        const y = etablissement.adresseEtablissement.coordonneeLambertOrdonneeEtablissement;
+                        if (x !== null && y !== null && x !== '[ND]' && y !== '[ND]') {
+                            coords.push([x, y]);
+                        }
+                    });
                 });
-            });
-        }
-    )
-    coords.filter((val) => val !== null);
-    const mappedValues = coords.map((value) => {
-        const x = parseFloat(value[0]);
-        const y = parseFloat(value[1]);
-        const projetes = proj4('EPSG:9794', 'EPSG:4326', [x, y])
-        return {
-            'lat': projetes[1],
-            'lng': projetes[0],
-        }
-    });
-    res.json(mappedValues);
+            }
+        )
+        coords.filter((val) => val !== null);
+        const mappedValues = coords.map((value) => {
+            const x = parseFloat(value[0]);
+            const y = parseFloat(value[1]);
+            const projetes = proj4('EPSG:9794', 'EPSG:4326', [x, y])
+            return {
+                'lat': projetes[1],
+                'lng': projetes[0],
+            }
+        });
+        // c'est ici qu'il faut save les mappedValues
+        console.log("mapped values : ", mappedValues);
+        const mappedValuesString = JSON.stringify(mappedValues);
+        console.log("mappedValuesString : ", mappedValuesString);
+        fs.writeFile(path.join(__dirname, `/data/departements/${departement}.json`), mappedValuesString, (err) => console.error(err));
+        res.json(mappedValues);
+    }
 });
 
 // Start the server and listen on the specified port

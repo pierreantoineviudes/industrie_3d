@@ -22,6 +22,7 @@ export class GetDataService {
         const nafCodes: any = await this.readNafCodes();
         const promises: Promise<AxiosResponse<any, any>>[] = [];
         const tailleSlice = 20;
+        console.log(`Querying APIs for departement ${departement}`);
         // boucle sur les slices
         for (let i = 0; i < nafCodes.length; i += tailleSlice) {
             const nafGroupe = nafCodes.slice(i, Math.min(i + tailleSlice, nafCodes.length));
@@ -47,11 +48,11 @@ export class GetDataService {
                 }
             }
         }
-
         return promises;
     }
 
     async readNafCodes() {
+        console.log("Reading NAF codes CSV");
         // read JSON data
         const csvNafs: string[] = [];
         const filePath = path.resolve(__dirname, 'data/interesting_naf_codes.csv');
