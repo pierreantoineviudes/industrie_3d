@@ -40,6 +40,7 @@ const fs = __importStar(require("fs"));
 const csv = require("csv-parser");
 const path = __importStar(require("path"));
 const axios_1 = __importDefault(require("axios"));
+// TODO : ajouter un système de cache pour ne pas appeler plusieurs fois les données de l'API
 class GetDataService {
     constructor() {
         // Example: Replace with actual API endpoint
