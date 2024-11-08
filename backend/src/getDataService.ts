@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import csv = require('csv-parser');
 import * as path from 'path';
 import axios, { AxiosResponse } from 'axios';
+import { ParsedQs } from 'qs';
 
 // TODO : ajouter un système de cache pour ne pas appeler plusieurs fois les données de l'API
 
@@ -17,7 +18,7 @@ export class GetDataService {
         "Accept": "application/json",
     }
 
-    async getData(departement: string) {
+    async getData(departement: string | string[] | ParsedQs | ParsedQs[]) {
         // read csv    
         const nafCodes: any = await this.readNafCodes();
         const promises: Promise<AxiosResponse<any, any>>[] = [];

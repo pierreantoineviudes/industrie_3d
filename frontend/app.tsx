@@ -4,10 +4,10 @@ import { Map } from 'react-map-gl/maplibre';
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
 import { HexagonLayer } from '@deck.gl/aggregation-layers';
 import DeckGL from '@deck.gl/react';
-import { CSVLoader } from '@loaders.gl/csv';
 import { JSONLoader, load } from '@loaders.gl/core';
 
 import type { Color, PickingInfo, MapViewState } from '@deck.gl/core';
+import axios from 'axios';
 
 // Source data CSV
 const DATA_URL =
@@ -126,7 +126,11 @@ export async function renderToDOM(container: HTMLDivElement) {
     root.render(<App />);
     // const data = (await load(DATA_URL, CSVLoader)).data;
     // const data = await fetch("http://localhost:3000/api/data").then(res => res.json())
-    const data2 = (await load("http://localhost:3000", JSONLoader));
+    const headers = {};
+    const params = { 'departement': 62 };
+    const data2 = await axios.get("http://localhost:3000", { params: params });
+    console.log(`data :`, data2.data);
+    // const data2 = (await load("http://localhost:3000", JSONLoader));
     // console.log("data : ", data);
     console.log("data2 : ", data2);
     const points: any[] = data2.map(d => [d.lng, d.lat]);

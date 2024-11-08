@@ -1,11 +1,12 @@
 // Import the 'express' module
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { GetDataService } from './getDataService';
 import dotenv from 'dotenv';
 import * as path from 'path';
 import proj4 from 'proj4';
 import cors from 'cors';
 import * as fs from 'fs';
+import { AxiosResponse } from 'axios';
 
 
 // load env variables
@@ -27,11 +28,12 @@ const port = 3000;
 const dataService = new GetDataService;
 
 // Define a route for the root path ('/')
-app.get('/', async (req, res) => {
+app.get('/', async (req: Request, res: Response) => {
     // Send a response to the client
-    const departement = '62'
-    // test if departement file exists in memory
-    // test if file exists locally
+    console.log(`departement from query : `, req.query.departement);
+    // const departement = parseInt(departementString);
+    const departement = req.query.departement;
+    console.log("params premier: ", req.query.departement);
     const pathDepartement: string = path.resolve(__dirname, `data/departements/${departement}.json`);
     const departementLocalExists: boolean = fs.existsSync(pathDepartement);
     console.log(`${departement}.json exists `, departementLocalExists);
@@ -39,10 +41,12 @@ app.get('/', async (req, res) => {
         // load departements local
         console.log(`loading departement local : ${departement}`);
         const mappedValues = JSON.parse(fs.readFileSync(pathDepartement, 'utf-8'));
-        console.log("mappedvalues loaded : ", mappedValues);
+        // console.log("mappedvalues loaded : ", mappedValues);
         res.json(mappedValues)
     } else {
-        const data = await dataService.getData(departement);
+        if (departement) {
+            const data = await dataService.getData(departement);
+        }
         const coords: any[] = [];
         await Promise.all(data).then(
             (datas: any) => {
@@ -71,9 +75,9 @@ app.get('/', async (req, res) => {
             }
         });
         // c'est ici qu'il faut save les mappedValues
-        console.log("mapped values : ", mappedValues);
+        // console.log("mapped values : ", mappedValues);
         const mappedValuesString = JSON.stringify(mappedValues);
-        console.log("mappedValuesString : ", mappedValuesString);
+        // console.log("mappedValuesString : ", mappedValuesString);
         fs.writeFile(path.join(__dirname, `/data/departements/${departement}.json`), mappedValuesString, (err) => console.error(err));
         res.json(mappedValues);
     }
