@@ -46,40 +46,40 @@ app.get('/', async (req: Request, res: Response) => {
     } else {
         if (departement) {
             const data = await dataService.getData(departement);
-        }
-        const coords: any[] = [];
-        await Promise.all(data).then(
-            (datas: any) => {
-                datas.forEach((data: {
-                    data: any; status: any;
-                }) => {
-                    const etablissements = data.data.etablissements;
-                    etablissements.forEach((etablissement: { adresseEtablissement: any; }) => {
-                        const x = etablissement.adresseEtablissement.coordonneeLambertAbscisseEtablissement;
-                        const y = etablissement.adresseEtablissement.coordonneeLambertOrdonneeEtablissement;
-                        if (x !== null && y !== null && x !== '[ND]' && y !== '[ND]') {
-                            coords.push([x, y]);
-                        }
+            const coords: any[] = [];
+            await Promise.all(data).then(
+                (datas: any) => {
+                    datas.forEach((data: {
+                        data: any; status: any;
+                    }) => {
+                        const etablissements = data.data.etablissements;
+                        etablissements.forEach((etablissement: { adresseEtablissement: any; }) => {
+                            const x = etablissement.adresseEtablissement.coordonneeLambertAbscisseEtablissement;
+                            const y = etablissement.adresseEtablissement.coordonneeLambertOrdonneeEtablissement;
+                            if (x !== null && y !== null && x !== '[ND]' && y !== '[ND]') {
+                                coords.push([x, y]);
+                            }
+                        });
                     });
-                });
-            }
-        )
-        coords.filter((val) => val !== null);
-        const mappedValues = coords.map((value) => {
-            const x = parseFloat(value[0]);
-            const y = parseFloat(value[1]);
-            const projetes = proj4('EPSG:9794', 'EPSG:4326', [x, y])
-            return {
-                'lat': projetes[1],
-                'lng': projetes[0],
-            }
-        });
-        // c'est ici qu'il faut save les mappedValues
-        // console.log("mapped values : ", mappedValues);
-        const mappedValuesString = JSON.stringify(mappedValues);
-        // console.log("mappedValuesString : ", mappedValuesString);
-        fs.writeFile(path.join(__dirname, `/data/departements/${departement}.json`), mappedValuesString, (err) => console.error(err));
-        res.json(mappedValues);
+                }
+            )
+            coords.filter((val) => val !== null);
+            const mappedValues = coords.map((value) => {
+                const x = parseFloat(value[0]);
+                const y = parseFloat(value[1]);
+                const projetes = proj4('EPSG:9794', 'EPSG:4326', [x, y])
+                return {
+                    'lat': projetes[1],
+                    'lng': projetes[0],
+                }
+            });
+            // c'est ici qu'il faut save les mappedValues
+            // console.log("mapped values : ", mappedValues);
+            const mappedValuesString = JSON.stringify(mappedValues);
+            // console.log("mappedValuesString : ", mappedValuesString);
+            fs.writeFile(path.join(__dirname, `/data/departements/${departement}.json`), mappedValuesString, (err) => console.error(err));
+            res.json(mappedValues);
+        }
     }
 });
 

@@ -133,6 +133,6 @@ export async function renderToDOM(container: HTMLDivElement) {
     // const data2 = (await load("http://localhost:3000", JSONLoader));
     // console.log("data : ", data);
     console.log("data2 : ", data2);
-    const points: any[] = data2.map(d => [d.lng, d.lat]);
+    const points: any[] = data2.data.map(d => [d.lng, d.lat]);
     root.render(<App data={points} />);
 }
