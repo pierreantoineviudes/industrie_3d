@@ -8,6 +8,9 @@ import { JSONLoader, load } from '@loaders.gl/core';
 
 import type { Color, PickingInfo, MapViewState } from '@deck.gl/core';
 import axios from 'axios';
+import { ScatterplotLayer } from 'deck.gl';
+
+// TODO: ajouter le nombre d'employés et pas juste le cluster de points
 
 // Source data CSV
 const DATA_URL =
@@ -64,10 +67,31 @@ function getTooltip({ object }: PickingInfo) {
     return `\
     latitude: ${Number.isFinite(lat) ? lat.toFixed(6) : ''}
     longitude: ${Number.isFinite(lng) ? lng.toFixed(6) : ''}
-    ${count} Accidents`;
+    ${count} employés`;
 }
 
-type DataPoint = [longitude: number, latitude: number];
+type DataPoint = [longitude: number, latitude: number, taille: number];
+
+type BartStation = {
+    name: string;
+    passengers: number;
+    coordinates: [longitude: number, latitude: number];
+};
+
+
+const layer = new ScatterplotLayer<BartStation>({
+    id: 'bart-stations',
+    data: [
+        { name: 'Colma', passengers: 4214, coordinates: [-122.466233, 37.684638] },
+        { name: 'Civic Center', passengers: 24798, coordinates: [-122.413756, 37.779528] },
+        // ...
+    ],
+    stroked: false,
+    filled: true,
+    getPosition: (d: BartStation) => d.coordinates,
+    getRadius: (d: BartStation) => Math.sqrt(d.passengers),
+    getFillColor: [255, 200, 0]
+});
 
 export default function App({
     data = null,
@@ -95,6 +119,11 @@ export default function App({
             pickable: true,
             radius,
             upperPercentile,
+            getElevationWeight: (d: DataPoint) => {
+                // console.log("d : ", d[2]);
+                return d[2]
+            },
+            getColorWeight: (d: DataPoint) => d[2],
             material: {
                 ambient: 0.64,
                 diffuse: 0.6,
@@ -133,6 +162,6 @@ export async function renderToDOM(container: HTMLDivElement) {
     // const data2 = (await load("http://localhost:3000", JSONLoader));
     // console.log("data : ", data);
     console.log("data2 : ", data2);
-    const points: any[] = data2.data.map(d => [d.lng, d.lat]);
+    const points: any[] = data2.data.map(d => [d.lng, d.lat, d.taille]);
     root.render(<App data={points} />);
 }

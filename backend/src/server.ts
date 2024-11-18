@@ -30,16 +30,12 @@ const dataService = new GetDataService;
 // Define a route for the root path ('/')
 app.get('/', async (req: Request, res: Response) => {
     // Send a response to the client
-    console.log(`departement from query : `, req.query.departement);
     // const departement = parseInt(departementString);
     const departement = req.query.departement;
-    console.log("params premier: ", req.query.departement);
     const pathDepartement: string = path.resolve(__dirname, `data/departements/${departement}.json`);
     const departementLocalExists: boolean = fs.existsSync(pathDepartement);
-    console.log(`${departement}.json exists `, departementLocalExists);
     if (departementLocalExists) {
         // load departements local
-        console.log(`loading departement local : ${departement}`);
         const mappedValues = JSON.parse(fs.readFileSync(pathDepartement, 'utf-8'));
         // console.log("mappedvalues loaded : ", mappedValues);
         res.json(mappedValues)
@@ -53,11 +49,20 @@ app.get('/', async (req: Request, res: Response) => {
                         data: any; status: any;
                     }) => {
                         const etablissements = data.data.etablissements;
-                        etablissements.forEach((etablissement: { adresseEtablissement: any; }) => {
+                        etablissements.forEach((etablissement: {
+                            uniteLegale: any; adresseEtablissement: any; 
+}) => {
                             const x = etablissement.adresseEtablissement.coordonneeLambertAbscisseEtablissement;
                             const y = etablissement.adresseEtablissement.coordonneeLambertOrdonneeEtablissement;
+                            const trancheEffectifsUniteLegale = etablissement.uniteLegale.trancheEffectifsUniteLegale;
                             if (x !== null && y !== null && x !== '[ND]' && y !== '[ND]') {
-                                coords.push([x, y]);
+                                coords.push(
+                                    {
+                                        'lat': x,
+                                        'lon': y,
+                                        'taille': trancheEffectifsUniteLegale,
+                                    }
+                                );
                             }
                         });
                     });
@@ -65,14 +70,16 @@ app.get('/', async (req: Request, res: Response) => {
             )
             coords.filter((val) => val !== null);
             const mappedValues = coords.map((value) => {
-                const x = parseFloat(value[0]);
-                const y = parseFloat(value[1]);
+                const x = parseFloat(value['lat']);
+                const y = parseFloat(value['lon']);
                 const projetes = proj4('EPSG:9794', 'EPSG:4326', [x, y])
                 return {
                     'lat': projetes[1],
                     'lng': projetes[0],
+                    'taille': parseInt(value["taille"]),
                 }
             });
+            console.log("mappedValues : ", mappedValues);
             // c'est ici qu'il faut save les mappedValues
             // console.log("mapped values : ", mappedValues);
             const mappedValuesString = JSON.stringify(mappedValues);

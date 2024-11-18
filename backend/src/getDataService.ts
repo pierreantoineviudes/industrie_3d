@@ -53,7 +53,6 @@ export class GetDataService {
     }
 
     async readNafCodes() {
-        console.log("Reading NAF codes CSV");
         // read JSON data
         const csvNafs: string[] = [];
         const filePath = path.resolve(__dirname, 'data/interesting_naf_codes.csv');
