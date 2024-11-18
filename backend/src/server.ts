@@ -27,6 +27,29 @@ const port = 3000;
 // create service to get data
 const dataService = new GetDataService;
 
+interface Dictionary<T> {
+    [key: string]: T
+}
+
+// create dictionnaire data
+let tailleDict: Record<string, number> = {
+    "00": 0,
+    "01": 1.5,
+    "02": 4,
+    "03": 7.5,
+    "11": 15,
+    "12": 35,
+    "21": 75,
+    "22": 150,
+    "31": 225,
+    "32": 375,
+    "41": 750,
+    "42": 1500,
+    "51": 3500,
+    "52": 7500,
+    "53": 10000,
+}
+
 // Define a route for the root path ('/')
 app.get('/', async (req: Request, res: Response) => {
     // Send a response to the client
@@ -50,8 +73,8 @@ app.get('/', async (req: Request, res: Response) => {
                     }) => {
                         const etablissements = data.data.etablissements;
                         etablissements.forEach((etablissement: {
-                            uniteLegale: any; adresseEtablissement: any; 
-}) => {
+                            uniteLegale: any; adresseEtablissement: any;
+                        }) => {
                             const x = etablissement.adresseEtablissement.coordonneeLambertAbscisseEtablissement;
                             const y = etablissement.adresseEtablissement.coordonneeLambertOrdonneeEtablissement;
                             const trancheEffectifsUniteLegale = etablissement.uniteLegale.trancheEffectifsUniteLegale;
@@ -73,10 +96,14 @@ app.get('/', async (req: Request, res: Response) => {
                 const x = parseFloat(value['lat']);
                 const y = parseFloat(value['lon']);
                 const projetes = proj4('EPSG:9794', 'EPSG:4326', [x, y])
+                // ici il faut convertir la taille avec le bon dictionnaire avant de
+                // le return
+                const tailleKey: string = value["taille"];
+                console.log("nb d'employés : ", tailleDict[tailleKey]);
                 return {
                     'lat': projetes[1],
                     'lng': projetes[0],
-                    'taille': parseInt(value["taille"]),
+                    'taille': tailleDict[tailleKey],
                 }
             });
             console.log("mappedValues : ", mappedValues);

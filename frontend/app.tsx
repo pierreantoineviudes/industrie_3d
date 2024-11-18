@@ -12,10 +12,6 @@ import { ScatterplotLayer } from 'deck.gl';
 
 // TODO: ajouter le nombre d'employés et pas juste le cluster de points
 
-// Source data CSV
-const DATA_URL =
-    'https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/3d-heatmap/heatmap-data.csv'; // eslint-disable-line
-
 const ambientLight = new AmbientLight({
     color: [255, 255, 255],
     intensity: 1.0
@@ -62,12 +58,12 @@ function getTooltip({ object }: PickingInfo) {
     }
     const lat = object.position[1];
     const lng = object.position[0];
-    const count = object.points.length;
+    console.log("objects in tooltip", object);
 
     return `\
     latitude: ${Number.isFinite(lat) ? lat.toFixed(6) : ''}
     longitude: ${Number.isFinite(lng) ? lng.toFixed(6) : ''}
-    ${count} employés`;
+    ${0} employés`;
 }
 
 type DataPoint = [longitude: number, latitude: number, taille: number];
@@ -119,10 +115,7 @@ export default function App({
             pickable: true,
             radius,
             upperPercentile,
-            getElevationWeight: (d: DataPoint) => {
-                // console.log("d : ", d[2]);
-                return d[2]
-            },
+            getElevationWeight: (d: DataPoint) => d[2],
             getColorWeight: (d: DataPoint) => d[2],
             material: {
                 ambient: 0.64,
