@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Map } from 'react-map-gl/maplibre';
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
@@ -9,6 +9,7 @@ import { JSONLoader, load } from '@loaders.gl/core';
 import type { Color, PickingInfo, MapViewState } from '@deck.gl/core';
 import axios from 'axios';
 import { ScatterplotLayer } from 'deck.gl';
+import RadiusControl from './components/RadiusControl';
 
 // TODO: ajouter le nombre d'employés et pas juste le cluster de points
 
@@ -92,7 +93,7 @@ const layer = new ScatterplotLayer<BartStation>({
 export default function App({
     data = null,
     mapStyle = MAP_STYLE,
-    radius = 1000,
+    // radius = 1000,
     upperPercentile = 100,
     coverage = 1
 }: {
@@ -113,7 +114,7 @@ export default function App({
             extruded: true,
             getPosition: d => d,
             pickable: true,
-            radius,
+            radius: 5000,
             upperPercentile,
             getElevationWeight: (d: DataPoint) => d[2],
             getColorWeight: (d: DataPoint) => d[2],
@@ -130,16 +131,21 @@ export default function App({
         })
     ];
 
+    const [radius, setRadius] = useState(1000);
+
     return (
-        <DeckGL
-            layers={layers}
-            effects={[lightingEffect]}
-            initialViewState={INITIAL_VIEW_STATE}
-            controller={true}
-            getTooltip={getTooltip}
-        >
-            <Map reuseMaps mapStyle={mapStyle} />
-        </DeckGL>
+        <div>
+            <RadiusControl radius={radius} setRadius={setRadius}/>
+            <DeckGL
+                layers={layers}
+                effects={[lightingEffect]}
+                initialViewState={INITIAL_VIEW_STATE}
+                controller={true}
+                getTooltip={getTooltip}
+            >
+                <Map reuseMaps mapStyle={mapStyle} />
+            </DeckGL>
+        </div>
     );
 }
 
