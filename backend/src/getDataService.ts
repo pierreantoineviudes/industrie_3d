@@ -4,7 +4,7 @@ import * as path from 'path';
 import axios, { AxiosResponse } from 'axios';
 import { ParsedQs } from 'qs';
 
-// TODO : ajouter un système de cache pour ne pas appeler plusieurs fois les données de l'API
+// TODO: download tous les datas de tous les departements
 
 export class GetDataService {
 

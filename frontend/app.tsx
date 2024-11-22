@@ -1,20 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Map } from 'react-map-gl/maplibre';
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
 import { HexagonLayer } from '@deck.gl/aggregation-layers';
 import DeckGL from '@deck.gl/react';
-import { JSONLoader, load } from '@loaders.gl/core';
 
 import type { Color, PickingInfo, MapViewState } from '@deck.gl/core';
 import axios from 'axios';
-import { ScatterplotLayer } from 'deck.gl';
 import RadiusControl from './components/RadiusControl';
 import ElevationControl from './components/ElevationControl';
 
 import './src/styles/slider.css';
-
-// TODO: ajouter le nombre d'employés et pas juste le cluster de points
 
 const ambientLight = new AmbientLight({
     color: [255, 255, 255],
@@ -63,7 +59,6 @@ function getTooltip({ object }: PickingInfo) {
     const lat = object.position[1];
     const lng = object.position[0];
     const hauteur = object.elevationValue;
-    console.log("objects in tooltip", object);
 
     return `\
     latitude: ${Number.isFinite(lat) ? lat.toFixed(6) : ''}
@@ -73,31 +68,8 @@ function getTooltip({ object }: PickingInfo) {
 
 type DataPoint = [longitude: number, latitude: number, taille: number];
 
-type BartStation = {
-    name: string;
-    passengers: number;
-    coordinates: [longitude: number, latitude: number];
-};
-
-
-const layer = new ScatterplotLayer<BartStation>({
-    id: 'bart-stations',
-    data: [
-        { name: 'Colma', passengers: 4214, coordinates: [-122.466233, 37.684638] },
-        { name: 'Civic Center', passengers: 24798, coordinates: [-122.413756, 37.779528] },
-        // ...
-    ],
-    stroked: false,
-    filled: true,
-    getPosition: (d: BartStation) => d.coordinates,
-    getRadius: (d: BartStation) => Math.sqrt(d.passengers),
-    getFillColor: [255, 200, 0]
-});
-
 export default function App({
-    data = null,
     mapStyle = MAP_STYLE,
-    // radius = 1000,
     upperPercentile = 100,
     coverage = 1
 }: {
@@ -110,6 +82,22 @@ export default function App({
 
     const [radius, setRadius] = useState(1000);
     const [elevation, setElevation] = useState(1000);
+    const [data, setData] = useState<DataPoint[] | null>(null);
+    const [selectedDept, setSelectedDept] = useState<number | null>(null);
+
+    // Fetch data for the selected department
+    useEffect(() => {
+        if (selectedDept !== null) {
+            const fetchData = async () => {
+                const params = { departement: selectedDept };
+                const response = await axios.get('http://localhost:3000', { params });
+                const points = response.data.map((d: any) => [d.lng, d.lat, d.taille]);
+                setData(points);
+            };
+
+            fetchData();
+        }
+    }, [selectedDept]);
 
     const layers = [
         new HexagonLayer<DataPoint>({
@@ -124,7 +112,7 @@ export default function App({
             pickable: true,
             radius: radius,
             upperPercentile,
-            getElevationWeight: (d: DataPoint) => d[2],
+            getElevationWeight: (d: DataPoint) => Math.log(1+d[2]),
             getColorWeight: (d: DataPoint) => d[2],
             material: {
                 ambient: 0.64,
@@ -141,6 +129,26 @@ export default function App({
 
     return (
         <div>
+            <div style={{ position: 'absolute', top: 150, left: 10, zIndex: 1000 }}>
+                <label htmlFor="department-select">Select Department:</label>
+                <select
+                    id="department-select"
+                    onChange={(e) => setSelectedDept(Number(e.target.value))}
+                >
+                    <option value="">-- Select --</option>
+                    <option value="62">62</option>
+                    <option value="75">75</option>
+                    <option value="13">13</option>
+                    <option value="59">59</option>
+                    <option value="21">21</option>
+                    <option value="69">69</option>
+                    <option value="78">78</option>
+                    <option value="01">01</option>
+                    <option value="02">02</option>
+                    <option value="76">76</option>
+                    {/* Add more departments as needed */}
+                </select>
+            </div>
             <RadiusControl radius={radius} setRadius={setRadius} />
             <ElevationControl elevation={elevation} setElevation={setElevation} />
             <DeckGL
@@ -159,15 +167,4 @@ export default function App({
 export async function renderToDOM(container: HTMLDivElement) {
     const root = createRoot(container);
     root.render(<App />);
-    // const data = (await load(DATA_URL, CSVLoader)).data;
-    // const data = await fetch("http://localhost:3000/api/data").then(res => res.json())
-    const headers = {};
-    const params = { 'departement': 62 };
-    const data2 = await axios.get("http://localhost:3000", { params: params });
-    console.log(`data :`, data2.data);
-    // const data2 = (await load("http://localhost:3000", JSONLoader));
-    // console.log("data : ", data);
-    console.log("data2 : ", data2);
-    const points: any[] = data2.data.map(d => [d.lng, d.lat, d.taille]);
-    root.render(<App data={points} />);
 }

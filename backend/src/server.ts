@@ -99,14 +99,13 @@ app.get('/', async (req: Request, res: Response) => {
                 // ici il faut convertir la taille avec le bon dictionnaire avant de
                 // le return
                 const tailleKey: string = value["taille"];
-                console.log("nb d'employés : ", tailleDict[tailleKey]);
                 return {
                     'lat': projetes[1],
                     'lng': projetes[0],
                     'taille': tailleDict[tailleKey],
                 }
             });
-            console.log("mappedValues : ", mappedValues);
+            
             // c'est ici qu'il faut save les mappedValues
             // console.log("mapped values : ", mappedValues);
             const mappedValuesString = JSON.stringify(mappedValues);
