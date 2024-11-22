@@ -1,25 +1,27 @@
-import React, { FC } from 'react';
+import React from 'react';
+import '../src/styles/slider.css'; // Import the CSS
 
 interface RadiusControlProps {
   radius: number;
-  setRadius: (radius: number) => void;
+  setRadius: (value: number) => void;
 }
 
-const RadiusControl: FC<RadiusControlProps> = ({ radius, setRadius }) => (
-  <div style={{ margin: '10px' }}>
-    <label>
-      Radius (meters):
+const RadiusControl: React.FC<RadiusControlProps> = ({ radius, setRadius }) => {
+  return (
+    <div className="radius-slider-container">
+      <label htmlFor="radius-slider" className="slider-label">
+        Radius:
+      </label>
       <input
-        type="number"
+        id="radius-slider"
+        type="range"
+        min="50"
+        max="5000"
         value={radius}
         onChange={(e) => setRadius(Number(e.target.value))}
-        min={100}
-        max={5000}
-        step={100}
-        style={{ marginLeft: '10px' }}
       />
-    </label>
-  </div>
-);
+    </div>
+  );
+};
 
 export default RadiusControl;

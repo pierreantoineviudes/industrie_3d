@@ -10,6 +10,9 @@ import type { Color, PickingInfo, MapViewState } from '@deck.gl/core';
 import axios from 'axios';
 import { ScatterplotLayer } from 'deck.gl';
 import RadiusControl from './components/RadiusControl';
+import ElevationControl from './components/ElevationControl';
+
+import './src/styles/slider.css';
 
 // TODO: ajouter le nombre d'employés et pas juste le cluster de points
 
@@ -59,12 +62,13 @@ function getTooltip({ object }: PickingInfo) {
     }
     const lat = object.position[1];
     const lng = object.position[0];
+    const hauteur = object.elevationValue;
     console.log("objects in tooltip", object);
 
     return `\
     latitude: ${Number.isFinite(lat) ? lat.toFixed(6) : ''}
     longitude: ${Number.isFinite(lng) ? lng.toFixed(6) : ''}
-    ${0} employés`;
+    ${hauteur} employés`;
 }
 
 type DataPoint = [longitude: number, latitude: number, taille: number];
@@ -103,18 +107,22 @@ export default function App({
     upperPercentile?: number;
     coverage?: number;
 }) {
+
+    const [radius, setRadius] = useState(1000);
+    const [elevation, setElevation] = useState(1000);
+
     const layers = [
         new HexagonLayer<DataPoint>({
             id: 'heatmap',
             colorRange,
             coverage,
             data,
-            elevationRange: [0, 3000],
+            elevationRange: [0, elevation],
             elevationScale: data && data.length ? 50 : 0,
             extruded: true,
             getPosition: d => d,
             pickable: true,
-            radius: 5000,
+            radius: radius,
             upperPercentile,
             getElevationWeight: (d: DataPoint) => d[2],
             getColorWeight: (d: DataPoint) => d[2],
@@ -131,11 +139,10 @@ export default function App({
         })
     ];
 
-    const [radius, setRadius] = useState(1000);
-
     return (
         <div>
-            <RadiusControl radius={radius} setRadius={setRadius}/>
+            <RadiusControl radius={radius} setRadius={setRadius} />
+            <ElevationControl elevation={elevation} setElevation={setElevation} />
             <DeckGL
                 layers={layers}
                 effects={[lightingEffect]}
