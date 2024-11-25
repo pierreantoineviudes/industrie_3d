@@ -8,15 +8,32 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+const path_1 = __importDefault(require("path"));
 const getAllDataService_1 = require("./getAllDataService");
-// Initialize GetAllDataService and call getAllData
-function execute() {
+const dotenv_1 = __importDefault(require("dotenv"));
+// load env variables
+dotenv_1.default.config({ path: path_1.default.resolve(__dirname, "../.env") });
+function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log("Autho : ", process.env.SIRENE_API_KEY);
-        const dataService = new getAllDataService_1.GetAllDataService();
-        const allData = yield dataService.getAllData();
-        console.log(allData);
+        const getAllDataService = new getAllDataService_1.GetAllDataService();
+        try {
+            // Call getAllData to start fetching data for all departments
+            yield getAllDataService.getAllData();
+            console.log('Successfully processed all departments.');
+        }
+        catch (error) {
+            if (error instanceof Error) {
+                console.error(`Error during data fetching: ${error.message}`);
+            }
+            else {
+                console.error(`Unknown error occurred:`, error);
+            }
+        }
     });
 }
-execute();
+// Run the function
+run();

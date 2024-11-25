@@ -63,54 +63,56 @@ app.get('/', async (req: Request, res: Response) => {
         res.json(mappedValues)
     } else {
         if (departement) {
-            const data = await dataService.getData(departement);
-            const coords: any[] = [];
-            await Promise.all(data).then(
-                (datas: any) => {
-                    datas.forEach((data: {
-                        data: any; status: any;
-                    }) => {
-                        const etablissements = data.data.etablissements;
-                        etablissements.forEach((etablissement: {
-                            uniteLegale: any; adresseEtablissement: any;
-                        }) => {
-                            const x = etablissement.adresseEtablissement.coordonneeLambertAbscisseEtablissement;
-                            const y = etablissement.adresseEtablissement.coordonneeLambertOrdonneeEtablissement;
-                            const trancheEffectifsUniteLegale = etablissement.uniteLegale.trancheEffectifsUniteLegale;
-                            if (x !== null && y !== null && x !== '[ND]' && y !== '[ND]') {
-                                coords.push(
-                                    {
-                                        'lat': x,
-                                        'lon': y,
-                                        'taille': trancheEffectifsUniteLegale,
-                                    }
-                                );
-                            }
-                        });
-                    });
-                }
-            )
-            coords.filter((val) => val !== null);
-            const mappedValues = coords.map((value) => {
-                const x = parseFloat(value['lat']);
-                const y = parseFloat(value['lon']);
-                const projetes = proj4('EPSG:9794', 'EPSG:4326', [x, y])
-                // ici il faut convertir la taille avec le bon dictionnaire avant de
-                // le return
-                const tailleKey: string = value["taille"];
-                return {
-                    'lat': projetes[1],
-                    'lng': projetes[0],
-                    'taille': tailleDict[tailleKey],
-                }
-            });
-            
-            // c'est ici qu'il faut save les mappedValues
-            // console.log("mapped values : ", mappedValues);
-            const mappedValuesString = JSON.stringify(mappedValues);
-            // console.log("mappedValuesString : ", mappedValuesString);
-            fs.writeFile(path.join(__dirname, `/data/departements/${departement}.json`), mappedValuesString, (err) => console.error(err));
-            res.json(mappedValues);
+            console.log(`data for departement ${departement} does not exist`);
+            // const data = await dataService.getData(departement);
+            // const coords: any[] = [];
+            // await Promise.all(data).then(
+            //     (datas: any) => {
+            //         datas.forEach((data: {
+            //             data: any; status: any;
+            //         }) => {
+            //             const etablissements = data.data.etablissements;
+            //             etablissements.forEach((etablissement: {
+            //                 uniteLegale: any; adresseEtablissement: any;
+            //             }) => {
+            //                 const x = etablissement.adresseEtablissement.coordonneeLambertAbscisseEtablissement;
+            //                 const y = etablissement.adresseEtablissement.coordonneeLambertOrdonneeEtablissement;
+            //                 const trancheEffectifsUniteLegale = etablissement.uniteLegale.trancheEffectifsUniteLegale;
+            //                 if (x !== null && y !== null && x !== '[ND]' && y !== '[ND]') {
+            //                     coords.push(
+            //                         {
+            //                             'lat': x,
+            //                             'lon': y,
+            //                             'taille': trancheEffectifsUniteLegale,
+            //                         }
+            //                     );
+            //                 }
+            //             });
+            //         });
+            //     }
+            // )
+            // coords.filter((val) => val !== null);
+            // const mappedValues = coords.map((value) => {
+            //     const x = parseFloat(value['lat']);
+            //     const y = parseFloat(value['lon']);
+            //     const projetes = proj4('EPSG:9794', 'EPSG:4326', [x, y])
+            //     // ici il faut convertir la taille avec le bon dictionnaire avant de
+            //     // le return
+            //     const tailleKey: string = value["taille"];
+            //     return {
+            //         'lat': projetes[1],
+            //         'lng': projetes[0],
+            //         'taille': tailleDict[tailleKey],
+            //     }
+            // });
+
+            // // c'est ici qu'il faut save les mappedValues
+            // // console.log("mapped values : ", mappedValues);
+            // const mappedValuesString = JSON.stringify(mappedValues);
+            // // console.log("mappedValuesString : ", mappedValuesString);
+            // fs.writeFile(path.join(__dirname, `/data/departements/${departement}.json`), mappedValuesString, (err) => console.error(err));
+            // res.json(mappedValues);
+            res.sendStatus(404);
         }
     }
 });
