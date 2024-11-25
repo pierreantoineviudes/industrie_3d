@@ -6,7 +6,6 @@ import * as path from 'path';
 import proj4 from 'proj4';
 import cors from 'cors';
 import * as fs from 'fs';
-import { AxiosResponse } from 'axios';
 
 
 // load env variables

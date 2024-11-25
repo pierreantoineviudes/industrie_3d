@@ -40,13 +40,12 @@ const fs = __importStar(require("fs"));
 const csv = require("csv-parser");
 const path = __importStar(require("path"));
 const axios_1 = __importDefault(require("axios"));
-// TODO : ajouter un système de cache pour ne pas appeler plusieurs fois les données de l'API
+// TODO: download tous les datas de tous les departements
 class GetDataService {
     constructor() {
         // Example: Replace with actual API endpoint
         this.base_url = "https://api.insee.fr/api-sirene/3.11/siret/";
         this.champs = "siret,activitePrincipaleUniteLegale,trancheEffectifsUniteLegale,codeCommuneEtablissement,coordonneeLambertAbscisseEtablissement,coordonneeLambertOrdonneeEtablissement";
-        this.departement = "13";
         this.token = process.env.SIRENE_API_KEY;
         this.headers = {
             "X-INSEE-Api-Key-Integration": this.token,
@@ -54,16 +53,17 @@ class GetDataService {
             "Accept": "application/json",
         };
     }
-    getData() {
+    getData(departement) {
         return __awaiter(this, void 0, void 0, function* () {
             // read csv    
             const nafCodes = yield this.readNafCodes();
             const promises = [];
             const tailleSlice = 20;
+            console.log(`Querying APIs for departement ${departement}`);
             // boucle sur les slices
             for (let i = 0; i < nafCodes.length; i += tailleSlice) {
                 const nafGroupe = nafCodes.slice(i, Math.min(i + tailleSlice, nafCodes.length));
-                let query = `trancheEffectifsUniteLegale:[0 TO 53] AND codeCommuneEtablissement:${this.departement}* AND (activitePrincipaleUniteLegale:${nafGroupe[0]["Code NAF"].slice(0, 2) + '.' + nafGroupe[0]["Code NAF"].slice(2)} `;
+                let query = `trancheEffectifsUniteLegale:[0 TO 53] AND codeCommuneEtablissement:${departement}* AND (activitePrincipaleUniteLegale:${nafGroupe[0]["Code NAF"].slice(0, 2) + '.' + nafGroupe[0]["Code NAF"].slice(2)} `;
                 nafGroupe.slice(1).forEach((code) => {
                     query += `OR activitePrincipaleUniteLegale:${code["Code NAF"].slice(0, 2) + '.' + code["Code NAF"].slice(2)} `;
                 });

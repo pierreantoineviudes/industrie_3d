@@ -84,20 +84,28 @@ export default function App({
     const [elevation, setElevation] = useState(1000);
     const [data, setData] = useState<DataPoint[] | null>(null);
     const [selectedDept, setSelectedDept] = useState<number | null>(null);
+    const departmentIds = Array.from({ length: 96 }, (_, i) => i.toString().padStart(2, '0'));
 
-    // Fetch data for the selected department
+    // Fetch data for all departments (0 to 95)
     useEffect(() => {
-        if (selectedDept !== null) {
-            const fetchData = async () => {
-                const params = { departement: selectedDept };
-                const response = await axios.get('http://localhost:3000', { params });
-                const points = response.data.map((d: any) => [d.lng, d.lat, d.taille]);
-                setData(points);
-            };
+        const fetchData = async () => {
+            const departmentData: Record<string, DataPoint[]> = {};
+            for (const dept of departmentIds) {
+                if (!dataByDepartment[dept]) {
+                    try {
+                        const params = { departement: dept };
+                        const response = await axios.get('http://localhost:3000', { params });
+                        departmentData[dept] = response.data.map((d: any) => [d.lng, d.lat, d.taille]);
+                    } catch (error) {
+                        console.error(`Error fetching data for department ${dept}:`, error);
+                    }
+                }
+            }
+            setDataByDepartment((prev) => ({ ...prev, ...departmentData }));
+        };
 
-            fetchData();
-        }
-    }, [selectedDept]);
+        fetchData();
+    }, [departmentIds]);
 
     const layers = [
         new HexagonLayer<DataPoint>({
@@ -112,7 +120,7 @@ export default function App({
             pickable: true,
             radius: radius,
             upperPercentile,
-            getElevationWeight: (d: DataPoint) => Math.log(1+d[2]),
+            getElevationWeight: (d: DataPoint) => Math.log(1 + d[2]),
             getColorWeight: (d: DataPoint) => d[2],
             material: {
                 ambient: 0.64,
@@ -133,7 +141,7 @@ export default function App({
                 <label htmlFor="department-select">Select Department:</label>
                 <select
                     id="department-select"
-                    onChange={(e) => setSelectedDept(Number(e.target.value))}
+                    onChange={(e) => { setSelectedDept(Number(e.target.value)) }}
                 >
                     <option value="">-- Select --</option>
                     <option value="62">62</option>
@@ -146,6 +154,7 @@ export default function App({
                     <option value="01">01</option>
                     <option value="02">02</option>
                     <option value="76">76</option>
+                    <option value="11">11</option>
                     {/* Add more departments as needed */}
                 </select>
             </div>
