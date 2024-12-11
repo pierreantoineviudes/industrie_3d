@@ -6,6 +6,7 @@ import * as path from 'path';
 import proj4 from 'proj4';
 import cors from 'cors';
 import * as fs from 'fs';
+import { json } from 'stream/consumers';
 
 
 // load env variables
@@ -116,6 +117,41 @@ app.get('/', async (req: Request, res: Response) => {
         }
     }
 });
+
+// TODO : faire une route pour avoir toutes les data d'un coup
+
+type Etablissement = {
+    lat: number,
+    lng: number,
+    taille: number
+}
+
+app.get('/alldata', async (req: Request, res: Response) => {
+    // boucler sur tous les departements pour les fusionner
+    let data: Etablissement[] = [];
+    for (let i = 0; i < 96; i++) {
+        const departement = i.toString().padStart(2, '0');
+        const pathDepartement: string = path.resolve(__dirname, `data/departements/${departement}.json`);
+        const departementLocalExists: boolean = fs.existsSync(pathDepartement);
+        if (departementLocalExists) {
+            // load departements local
+            const mappedValues = JSON.parse(fs.readFileSync(pathDepartement, 'utf-8'));
+            data = [...data, ...mappedValues]
+            // console.log("mappedvalues loaded : ", mappedValues);
+        } else {
+            console.log(`departement ${i} n'est pas en stock`);
+        }
+    }
+    res.json(
+        data
+    );
+});
+
+app.use((req, res, next) => {
+    console.log(`Unhandled route: ${req.method} ${req.url}`);
+    next();
+});
+
 
 // Start the server and listen on the specified port
 app.listen(port, () => {

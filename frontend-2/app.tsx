@@ -65,7 +65,7 @@ export default function App({
 
     const heatmapLayer = new HeatmapLayer<Etablissement>({
         id: 'HeatmapLayer',
-        data: 'http://localhost:3000?departement=62',
+        data: 'http://localhost:3000/alldata',
         aggregation: 'SUM',
         getPosition: (d: Etablissement) => [d.lng, d.lat],
         getWeight: (d: Etablissement) => d.taille,
