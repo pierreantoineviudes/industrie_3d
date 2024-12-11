@@ -67,18 +67,14 @@ function getTooltip({ object }: PickingInfo) {
     ${hauteur} employés`;
 }
 
-type Etablissement = {
-    lat: number,
-    lng: number,
-    taille: number
-}
+type DataPoint = [longitude: number, latitude: number, taille: number];
 
 export default function App({
     mapStyle = MAP_STYLE,
     upperPercentile = 100,
     coverage = 1
 }: {
-    data?: Etablissement[] | null;
+    data?: DataPoint[] | null;
     mapStyle?: string;
     radius?: number;
     upperPercentile?: number;
@@ -88,24 +84,59 @@ export default function App({
     const [radius, setRadius] = useState(1000);
     const [elevation, setElevation] = useState(1000);
     const [alpha, setAlpha] = useState(1);
+    const dataRef = useRef<DataPoint[]>([]);
+    const departmentIds = Array.from({ length: 96 }, (_, i) => i.toString().padStart(2, '0'));
+    const fetchedDepartments = useRef(new Set()); // To track successfully fetched departments
+    const missingDepartments = useRef(new Set()); // To track departments with no data (404)
     const [minElevation, setMinElevation] = useState<number | null>(null);
     const [maxElevation, setMaxElevation] = useState<number | null>(null);
 
+    useEffect(() => {
+        const fetchData = async () => {
+            for (const dept of departmentIds) {
+                // Skip if already fetched or known to have no data
+                if (fetchedDepartments.current.has(dept) || missingDepartments.current.has(dept)) {
+                    continue;
+                }
+
+                try {
+                    const params = { departement: dept };
+                    const response = await axios.get('http://localhost:3000', { params });
+                    const deptData = response.data.map((d: any) => [d.lng, d.lat, d.taille]);
+                    dataRef.current = [...dataRef.current, ...deptData]
+                    fetchedDepartments.current.add(dept); // Mark as successfully fetched
+                    const values = dataRef.current.map((d) => d[2]); // Assuming `d[2]` is the value to compute min/max
+                    setMinElevation(Math.min(...values));
+                    setMaxElevation(Math.max(...values));
+                } catch (error: any) {
+                    if (error.response?.status === 404) {
+                        console.warn(`No data found for department ${dept}. Skipping...`);
+                        missingDepartments.current.add(dept); // Mark as missing
+                    } else {
+                        console.error(`Error fetching data for department ${dept}:`, error);
+                    }
+                }
+            }
+        };
+
+        fetchData().then(() => console.log("fetching data done"));
+    }, [departmentIds]);
+
     const layer = React.useMemo(() => {
-        return new HexagonLayer<Etablissement>({
+        return new HexagonLayer<DataPoint>({
             id: 'heatmap',
-            data: 'http://localhost:3000/alldata'   ,
+            data: dataRef.current,
             colorRange,
             coverage: 1,
             elevationRange: [0, elevation],
-            elevationScale: 50,
+            elevationScale: dataRef.current.length ? 100 : 0,
             extruded: true,
-            getPosition: (d) => [d.lng , d.lat],
+            getPosition: (d) => d,
             pickable: true,
             radius: radius,
             upperPercentile: 100,
-            getElevationWeight: (d: Etablissement) => d.taille,
-            getColorWeight: (d: Etablissement) => d.taille,
+            getElevationWeight: (d: DataPoint) => Math.log(1 + ((d[2] - minElevation) / (maxElevation - minElevation))),
+            getColorWeight: (d: DataPoint) => Math.log(1 + ((d[2] - minElevation) / (maxElevation - minElevation))),
             colorScaleType: "quantize",
             material: {
                 ambient: 0.64,
