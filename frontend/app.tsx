@@ -1,17 +1,17 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Map } from 'react-map-gl/maplibre';
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
 import { HexagonLayer } from '@deck.gl/aggregation-layers';
 import DeckGL from '@deck.gl/react';
-import { CSVLoader } from '@loaders.gl/csv';
-import { JSONLoader, load } from '@loaders.gl/core';
 
 import type { Color, PickingInfo, MapViewState } from '@deck.gl/core';
+import axios from 'axios';
+import RadiusControl from './components/RadiusControl';
+import ElevationControl from './components/ElevationControl';
+import AlphaControl from './components/AlphaControl';
 
-// Source data CSV
-const DATA_URL =
-    'https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/3d-heatmap/heatmap-data.csv'; // eslint-disable-line
+import './src/styles/slider.css';
 
 const ambientLight = new AmbientLight({
     color: [255, 255, 255],
@@ -59,76 +59,82 @@ function getTooltip({ object }: PickingInfo) {
     }
     const lat = object.position[1];
     const lng = object.position[0];
-    const count = object.points.length;
+    const hauteur = object.elevationValue;
 
     return `\
     latitude: ${Number.isFinite(lat) ? lat.toFixed(6) : ''}
     longitude: ${Number.isFinite(lng) ? lng.toFixed(6) : ''}
-    ${count} Accidents`;
+    ${hauteur} employés`;
 }
 
-type DataPoint = [longitude: number, latitude: number];
+type Etablissement = {
+    lat: number,
+    lng: number,
+    taille: number
+}
 
 export default function App({
-    data = null,
     mapStyle = MAP_STYLE,
-    radius = 1000,
     upperPercentile = 100,
     coverage = 1
 }: {
-    data?: DataPoint[] | null;
+    data?: Etablissement[] | null;
     mapStyle?: string;
     radius?: number;
     upperPercentile?: number;
     coverage?: number;
 }) {
-    const layers = [
-        new HexagonLayer<DataPoint>({
+
+    const [radius, setRadius] = useState(1000);
+    const [elevation, setElevation] = useState(1000);
+    const [alpha, setAlpha] = useState(1);
+    const [minElevation, setMinElevation] = useState<number | null>(null);
+    const [maxElevation, setMaxElevation] = useState<number | null>(null);
+
+    const layer = React.useMemo(() => {
+        return new HexagonLayer<Etablissement>({
             id: 'heatmap',
+            data: 'http://localhost:3000/alldata'   ,
             colorRange,
-            coverage,
-            data,
-            elevationRange: [0, 3000],
-            elevationScale: data && data.length ? 50 : 0,
+            coverage: 1,
+            elevationRange: [0, elevation],
+            elevationScale: 50,
             extruded: true,
-            getPosition: d => d,
+            getPosition: (d) => [d.lng , d.lat],
             pickable: true,
-            radius,
-            upperPercentile,
+            radius: radius,
+            upperPercentile: 100,
+            getElevationWeight: (d: Etablissement) => d.taille,
+            getColorWeight: (d: Etablissement) => d.taille,
+            colorScaleType: "quantize",
             material: {
                 ambient: 0.64,
                 diffuse: 0.6,
                 shininess: 32,
                 specularColor: [51, 51, 51]
-            },
-
-            transitions: {
-                elevationScale: 3000
             }
         })
-    ];
+    }, [radius, elevation, alpha]);
 
     return (
-        <DeckGL
-            layers={layers}
-            effects={[lightingEffect]}
-            initialViewState={INITIAL_VIEW_STATE}
-            controller={true}
-            getTooltip={getTooltip}
-        >
-            <Map reuseMaps mapStyle={mapStyle} />
-        </DeckGL>
+        <div>
+            <RadiusControl radius={radius} setRadius={setRadius} />
+            <ElevationControl elevation={elevation} setElevation={setElevation} />
+            <AlphaControl alpha={alpha} setAlpha={setAlpha} />
+            <DeckGL
+                layers={[layer]}
+                effects={[lightingEffect]}
+                initialViewState={INITIAL_VIEW_STATE}
+                controller={true}
+                getTooltip={getTooltip}
+            >
+                <Map reuseMaps mapStyle={mapStyle} />
+            </DeckGL>
+        </div>
     );
 }
 
 export async function renderToDOM(container: HTMLDivElement) {
     const root = createRoot(container);
     root.render(<App />);
-    const data = (await load(DATA_URL, CSVLoader)).data;
-    // const data = await fetch("http://localhost:3000/api/data").then(res => res.json())
-    const data2 = (await load("http://localhost:3000", JSONLoader));
-    console.log("data : ", data);
-    console.log("data2 : ", data2);
-    const points: any[] = data2.map(d => [d.lng, d.lat]);
-    root.render(<App data={points} />);
 }

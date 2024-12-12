@@ -42,6 +42,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const path = __importStar(require("path"));
 const proj4_1 = __importDefault(require("proj4"));
 const cors_1 = __importDefault(require("cors"));
+const fs = __importStar(require("fs"));
 // load env variables
 dotenv_1.default.config({ path: path.resolve(__dirname, "../.env") });
 // define projection lambert
@@ -54,34 +55,80 @@ app.use((0, cors_1.default)());
 const port = 3000;
 // create service to get data
 const dataService = new getDataService_1.GetDataService;
+// create dictionnaire data
+let tailleDict = {
+    "00": 0,
+    "01": 1.5,
+    "02": 4,
+    "03": 7.5,
+    "11": 15,
+    "12": 35,
+    "21": 75,
+    "22": 150,
+    "31": 225,
+    "32": 375,
+    "41": 750,
+    "42": 1500,
+    "51": 3500,
+    "52": 7500,
+    "53": 10000,
+};
 // Define a route for the root path ('/')
 app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     // Send a response to the client
-    const data = yield dataService.getData();
-    const coords = [];
-    yield Promise.all(data).then((datas) => {
-        datas.forEach((data) => {
-            const etablissements = data.data.etablissements;
-            etablissements.forEach((etablissement) => {
-                const x = etablissement.adresseEtablissement.coordonneeLambertAbscisseEtablissement;
-                const y = etablissement.adresseEtablissement.coordonneeLambertOrdonneeEtablissement;
-                if (x !== null && y !== null && x !== '[ND]' && y !== '[ND]') {
-                    coords.push([x, y]);
-                }
+    // const departement = parseInt(departementString);
+    const departement = req.query.departement;
+    const pathDepartement = path.resolve(__dirname, `data/departements/${departement}.json`);
+    const departementLocalExists = fs.existsSync(pathDepartement);
+    if (departementLocalExists) {
+        // load departements local
+        const mappedValues = JSON.parse(fs.readFileSync(pathDepartement, 'utf-8'));
+        // console.log("mappedvalues loaded : ", mappedValues);
+        res.json(mappedValues);
+    }
+    else {
+        if (departement) {
+            const data = yield dataService.getData(departement);
+            const coords = [];
+            yield Promise.all(data).then((datas) => {
+                datas.forEach((data) => {
+                    const etablissements = data.data.etablissements;
+                    etablissements.forEach((etablissement) => {
+                        const x = etablissement.adresseEtablissement.coordonneeLambertAbscisseEtablissement;
+                        const y = etablissement.adresseEtablissement.coordonneeLambertOrdonneeEtablissement;
+                        const trancheEffectifsUniteLegale = etablissement.uniteLegale.trancheEffectifsUniteLegale;
+                        if (x !== null && y !== null && x !== '[ND]' && y !== '[ND]') {
+                            coords.push({
+                                'lat': x,
+                                'lon': y,
+                                'taille': trancheEffectifsUniteLegale,
+                            });
+                        }
+                    });
+                });
             });
-        });
-    });
-    coords.filter((val) => val !== null);
-    const mappedValues = coords.map((value) => {
-        const x = parseFloat(value[0]);
-        const y = parseFloat(value[1]);
-        const projetes = (0, proj4_1.default)('EPSG:9794', 'EPSG:4326', [x, y]);
-        return {
-            'lat': projetes[1],
-            'lng': projetes[0],
-        };
-    });
-    res.json(mappedValues);
+            coords.filter((val) => val !== null);
+            const mappedValues = coords.map((value) => {
+                const x = parseFloat(value['lat']);
+                const y = parseFloat(value['lon']);
+                const projetes = (0, proj4_1.default)('EPSG:9794', 'EPSG:4326', [x, y]);
+                // ici il faut convertir la taille avec le bon dictionnaire avant de
+                // le return
+                const tailleKey = value["taille"];
+                return {
+                    'lat': projetes[1],
+                    'lng': projetes[0],
+                    'taille': tailleDict[tailleKey],
+                };
+            });
+            // c'est ici qu'il faut save les mappedValues
+            // console.log("mapped values : ", mappedValues);
+            const mappedValuesString = JSON.stringify(mappedValues);
+            // console.log("mappedValuesString : ", mappedValuesString);
+            fs.writeFile(path.join(__dirname, `/data/departements/${departement}.json`), mappedValuesString, (err) => console.error(err));
+            res.json(mappedValues);
+        }
+    }
 }));
 // Start the server and listen on the specified port
 app.listen(port, () => {
